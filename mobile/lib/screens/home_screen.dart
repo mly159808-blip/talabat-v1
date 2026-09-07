@@ -4,15 +4,217 @@ import '../services/api.dart';
 import '../services/ad_service.dart';
 import '../widgets/ad_banner.dart';
 
-class HomeScreen extends StatefulWidget { final VoidCallback? onLogout; const HomeScreen({super.key,this.onLogout}); @override State<HomeScreen> createState()=>_Home(); }
-class _Home extends State<HomeScreen>{ final ad=AdService(); List cats=[]; final Map<String,int> cart={}; final Map<String,Map> products={}; bool loading=true,busy=false;
-@override void initState(){super.initState();ad.loadInterstitial();load();}
-Future<void> load()async{try{cats=await Api.get('/categories');for(final c in cats){for(final p in (c['products'] as List)){products[p['id'].toString()]=Map<String,dynamic>.from(p);}}}catch(e){if(mounted)show(e.toString());}finally{if(mounted)setState(()=>loading=false);}}
-void add(String id){setState(()=>cart[id]=(cart[id]??0)+1);} void remove(String id){setState((){if((cart[id]??0)<=1)cart.remove(id);else cart[id]=cart[id]!-1;});}
-num total(){num x=0;for(final e in cart.entries)x+=num.parse(products[e.key]!['price'].toString())*e.value;return x;}
-Future<void> checkout()async{if(cart.isEmpty){show('السلة فارغة');return;}final address=TextEditingController(),phone=TextEditingController();final ok=await showDialog<bool>(context:context,builder:(c)=>Directionality(textDirection:TextDirection.rtl,child:AlertDialog(title:const Text('تأكيد الطلب'),content:Column(mainAxisSize:MainAxisSize.min,children:[Text('الإجمالي: ${total()} جنيه'),TextField(controller:address,decoration:const InputDecoration(labelText:'العنوان')),TextField(controller:phone,keyboardType:TextInputType.phone,decoration:const InputDecoration(labelText:'رقم الهاتف'))]),actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('إلغاء')),FilledButton(onPressed:()=>Navigator.pop(c,true),child:const Text('إرسال الطلب'))])));if(ok!=true)return;if(address.text.trim().isEmpty||phone.text.trim().isEmpty){show('اكتب العنوان ورقم الهاتف');return;}setState(()=>busy=true);try{final p=await SharedPreferences.getInstance();await Api.post('/orders',{'items':cart.entries.map((e)=>{'productId':e.key,'quantity':e.value}).toList(),'address':address.text.trim(),'phone':phone.text.trim()},token:p.getString('token'));setState(()=>cart.clear());show('تم إرسال الطلب بنجاح');}catch(e){show(e.toString().replaceFirst('Exception: ',''));}finally{if(mounted)setState(()=>busy=false);}}
-Future<void> orders()async{final p=await SharedPreferences.getInstance();try{final data=await Api.getAuthed('/orders/my',p.getString('token'));if(!mounted)return;showModalBottomSheet(context:context,builder:(c)=>Directionality(textDirection:TextDirection.rtl,child:ListView(padding:const EdgeInsets.all(16),children:[const Text('طلباتي',style:TextStyle(fontSize:24,fontWeight:FontWeight.bold)),...data.map<Widget>((o)=>Card(child:ListTile(title:Text('طلب #${o['id'].toString().substring(0,6)}'),subtitle:Text('${o['total']} جنيه - ${o['status']}'))))])));}catch(e){show(e.toString().replaceFirst('Exception: ',''));}}
-Future<void> logout()async{final p=await SharedPreferences.getInstance();await p.remove('token');await p.remove('name');widget.onLogout?.call();}
-void show(String s)=>ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(s)));
-@override Widget build(BuildContext c)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(appBar:AppBar(title:const Text('طلبات V1'),actions:[IconButton(onPressed:orders,icon:const Icon(Icons.receipt_long)),IconButton(onPressed:logout,icon:const Icon(Icons.logout))]),body:loading?const Center(child:CircularProgressIndicator()):ListView(padding:const EdgeInsets.all(16),children:[const Text('اختار القسم',style:TextStyle(fontSize:24,fontWeight:FontWeight.bold)),const SizedBox(height:12),const AdBanner(),const SizedBox(height:12),...cats.map((cat)=>Card(child:ExpansionTile(title:Text(cat['name']),children:[...(cat['products'] as List).map((p)=>ListTile(title:Text(p['name']),subtitle:Text('${p['price']} جنيه'),trailing:Row(mainAxisSize:MainAxisSize.min,children:[if((cart[p['id'].toString()]??0)>0)IconButton(onPressed:()=>remove(p['id'].toString()),icon:const Icon(Icons.remove)),Text('${cart[p['id'].toString()]??0}'),IconButton(onPressed:()=>add(p['id'].toString()),icon:const Icon(Icons.add))])))]))),const SizedBox(height:90)]),bottomNavigationBar:cart.isEmpty?null:SafeArea(child:Padding(padding:const EdgeInsets.all(12),child:FilledButton(onPressed:busy?null:checkout,child:Text(busy?'جاري إرسال الطلب...':'السلة: ${total()} جنيه - إتمام الطلب'))))));}
+class HomeScreen extends StatefulWidget {
+  final VoidCallback? onLogout;
+  const HomeScreen({super.key, this.onLogout});
+  @override
+  State<HomeScreen> createState() => _Home();
+}
+
+class _Home extends State<HomeScreen> {
+  final ad = AdService();
+  List cats = [];
+  final Map<String, int> cart = {};
+  final Map<String, Map> products = {};
+  bool loading = true, busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    ad.loadInterstitial();
+    load();
+  }
+
+  Future<void> load() async {
+    try {
+      cats = await Api.get('/categories');
+      for (final c in cats) {
+        for (final p in (c['products'] as List)) {
+          products[p['id'].toString()] = Map<String, dynamic>.from(p);
+        }
+      }
+    } catch (e) {
+      if (mounted) show(e.toString());
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  void add(String id) => setState(() => cart[id] = (cart[id] ?? 0) + 1);
+
+  void remove(String id) {
+    setState(() {
+      if ((cart[id] ?? 0) <= 1) {
+        cart.remove(id);
+      } else {
+        cart[id] = cart[id]! - 1;
+      }
+    });
+  }
+
+  num total() {
+    num x = 0;
+    for (final e in cart.entries) {
+      x += num.parse(products[e.key]!['price'].toString()) * e.value;
+    }
+    return x;
+  }
+
+  Future<void> checkout() async {
+    if (cart.isEmpty) {
+      show('السلة فارغة');
+      return;
+    }
+    final address = TextEditingController();
+    final phone = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          title: const Text('تأكيد الطلب'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('الإجمالي: ${total()} جنيه'),
+              TextField(controller: address, decoration: const InputDecoration(labelText: 'العنوان')),
+              TextField(controller: phone, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'رقم الهاتف')),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('إلغاء')),
+            FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('إرسال الطلب')),
+          ],
+        ),
+      ),
+    );
+    if (ok != true) return;
+    if (address.text.trim().isEmpty || phone.text.trim().isEmpty) {
+      show('اكتب العنوان ورقم الهاتف');
+      return;
+    }
+    setState(() => busy = true);
+    try {
+      final p = await SharedPreferences.getInstance();
+      await Api.post(
+        '/orders',
+        {
+          'items': cart.entries.map((e) => {'productId': e.key, 'quantity': e.value}).toList(),
+          'address': address.text.trim(),
+          'phone': phone.text.trim(),
+        },
+        token: p.getString('token'),
+      );
+      setState(() => cart.clear());
+      show('تم إرسال الطلب بنجاح');
+    } catch (e) {
+      show(e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> orders() async {
+    final p = await SharedPreferences.getInstance();
+    try {
+      final data = await Api.getAuthed('/orders/my', p.getString('token'));
+      if (!mounted) return;
+      showModalBottomSheet(
+        context: context,
+        builder: (c) => Directionality(
+          textDirection: TextDirection.rtl,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              const Text('طلباتي', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              ...data.map<Widget>((o) => Card(
+                    child: ListTile(
+                      title: Text('طلب #${o['id'].toString().substring(0, 6)}'),
+                      subtitle: Text('${o['total']} جنيه - ${o['status']}'),
+                    ),
+                  )),
+            ],
+          ),
+        ),
+      );
+    } catch (e) {
+      show(e.toString().replaceFirst('Exception: ', ''));
+    }
+  }
+
+  Future<void> logout() async {
+    final p = await SharedPreferences.getInstance();
+    await p.remove('token');
+    await p.remove('name');
+    widget.onLogout?.call();
+  }
+
+  void show(String s) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s)));
+
+  @override
+  Widget build(BuildContext c) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text('طلبات V1'),
+            actions: [
+              IconButton(onPressed: orders, icon: const Icon(Icons.receipt_long)),
+              IconButton(onPressed: logout, icon: const Icon(Icons.logout)),
+            ],
+          ),
+          body: loading
+              ? const Center(child: CircularProgressIndicator())
+              : ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    const Text('اختار القسم', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 12),
+                    const AdBanner(),
+                    const SizedBox(height: 12),
+                    ...cats.map(
+                      (cat) => Card(
+                        child: ExpansionTile(
+                          title: Text(cat['name']),
+                          children: [
+                            ...(cat['products'] as List).map(
+                              (p) => ListTile(
+                                title: Text(p['name']),
+                                subtitle: Text('${p['price']} جنيه'),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if ((cart[p['id'].toString()] ?? 0) > 0)
+                                      IconButton(
+                                        onPressed: () => remove(p['id'].toString()),
+                                        icon: const Icon(Icons.remove),
+                                      ),
+                                    Text('${cart[p['id'].toString()] ?? 0}'),
+                                    IconButton(
+                                      onPressed: () => add(p['id'].toString()),
+                                      icon: const Icon(Icons.add),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 90),
+                  ],
+                ),
+          bottomNavigationBar: cart.isEmpty
+              ? null
+              : SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: FilledButton(
+                      onPressed: busy ? null : checkout,
+                      child: Text(busy ? 'جاري إرسال الطلب...' : 'السلة: ${total()} جنيه - إتمام الطلب'),
+                    ),
+                  ),
+                ),
+        ),
+      );
 }
