@@ -1,1 +1,1 @@
-{"name":"talabat-v1-admin","private":true,"version":"1.0.0","type":"module","scripts":{"dev":"vite","build":"vite build"},"dependencies":{"@vitejs/plugin-react":"latest","vite":"latest","react":"latest","react-dom":"latest"}}
+{"name":"talabat-v1-admin","private":true,"version":"1.0.0","type":"module","scripts":{"dev":"vite","build":"vite build","start":"vite --host 0.0.0.0"},"dependencies":{"@vitejs/plugin-react":"latest","vite":"latest","react":"latest","react-dom":"latest"}}
