@@ -1,0 +1,17 @@
+name: talabat_v1
+description: Arabic ordering marketplace V1
+publish_to: "none"
+environment:
+  sdk: ">=3.10.0 <4.0.0"
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.5.0
+  google_mobile_ads: ^9.1.0
+  shared_preferences: ^2.5.3
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+flutter:
+  uses-material-design: true
