@@ -49,10 +49,19 @@ jobs:
       - name: Build debug APK
         run: flutter build apk --debug
 
-      - name: Upload APK
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Build release AAB
+        run: flutter build appbundle --release
+
+      - name: Upload Android artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: talabat-v1-debug-apk
-          path: mobile/build/app/outputs/flutter-apk/app-debug.apk
+          name: talabat-v1-android-builds
+          path: |
+            mobile/build/app/outputs/flutter-apk/app-debug.apk
+            mobile/build/app/outputs/flutter-apk/app-release.apk
+            mobile/build/app/outputs/bundle/release/app-release.aab
           if-no-files-found: error
           retention-days: 14
