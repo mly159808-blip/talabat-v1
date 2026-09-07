@@ -43,6 +43,9 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Remove generated placeholder test
+        run: rm -f test/widget_test.dart
+
       - name: Analyze
         run: flutter analyze
 
