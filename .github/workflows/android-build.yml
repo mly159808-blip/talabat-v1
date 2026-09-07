@@ -27,6 +27,19 @@ jobs:
       - name: Generate Android platform files
         run: flutter create --platforms=android .
 
+      - name: Configure AdMob test app ID
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('android/app/src/main/AndroidManifest.xml')
+          s = p.read_text()
+          marker = '<application'
+          meta = '<meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-3940256099942544~3347511713"/> '
+          if 'com.google.android.gms.ads.APPLICATION_ID' not in s:
+              s = s.replace(marker, meta + marker, 1)
+          p.write_text(s)
+          PY
+
       - name: Get dependencies
         run: flutter pub get
 
