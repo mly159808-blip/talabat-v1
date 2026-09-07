@@ -1,63 +1,88 @@
-generator client { provider = "prisma-client-js" }
-datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+generator client {
+  provider = "prisma-client-js"
+}
 
-enum AdType { BANNER INTERSTITIAL REWARDED APP_OPEN DIRECT }
-enum OrderStatus { PENDING CONFIRMED PREPARING OUT_FOR_DELIVERY DELIVERED CANCELLED }
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AdType {
+  BANNER
+  INTERSTITIAL
+  REWARDED
+  APP_OPEN
+  DIRECT
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
 
 model User {
-  id String @id @default(cuid())
-  name String
-  phone String @unique
-  password String
-  role String @default("USER")
+  id        String   @id @default(cuid())
+  name      String
+  phone     String   @unique
+  password  String
+  role      String   @default("USER")
   createdAt DateTime @default(now())
-  orders Order[]
+  orders    Order[]
 }
+
 model Category {
-  id String @id @default(cuid())
-  name String
+  id       String    @id @default(cuid())
+  name     String
   imageUrl String?
-  active Boolean @default(true)
+  active   Boolean   @default(true)
   products Product[]
 }
+
 model Product {
-  id String @id @default(cuid())
-  name String
+  id          String      @id @default(cuid())
+  name        String
   description String?
-  price Decimal @db.Decimal(10,2)
-  imageUrl String?
-  active Boolean @default(true)
-  categoryId String
-  category Category @relation(fields:[categoryId], references:[id])
-  orderItems OrderItem[]
+  price       Decimal     @db.Decimal(10,2)
+  imageUrl    String?
+  active      Boolean     @default(true)
+  categoryId  String
+  category    Category    @relation(fields: [categoryId], references: [id])
+  orderItems  OrderItem[]
 }
+
 model Order {
-  id String @id @default(cuid())
-  userId String
-  status OrderStatus @default(PENDING)
-  total Decimal @db.Decimal(10,2)
-  address String
-  phone String
-  createdAt DateTime @default(now())
-  user User @relation(fields:[userId], references:[id])
-  items OrderItem[]
+  id        String      @id @default(cuid())
+  userId    String
+  status    OrderStatus @default(PENDING)
+  total     Decimal     @db.Decimal(10,2)
+  address   String
+  phone     String
+  createdAt DateTime    @default(now())
+  user      User        @relation(fields: [userId], references: [id])
+  items     OrderItem[]
 }
+
 model OrderItem {
-  id String @id @default(cuid())
-  orderId String
+  id        String  @id @default(cuid())
+  orderId   String
   productId String
-  quantity Int
+  quantity  Int
   unitPrice Decimal @db.Decimal(10,2)
-  order Order @relation(fields:[orderId], references:[id], onDelete:Cascade)
-  product Product @relation(fields:[productId], references:[id])
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
 }
+
 model AdConfig {
-  id String @id @default(cuid())
-  type AdType
-  enabled Boolean @default(true)
-  placement String
-  frequency Int @default(3)
+  id            String   @id @default(cuid())
+  type          AdType
+  enabled       Boolean  @default(true)
+  placement     String
+  frequency     Int      @default(3)
   unitIdAndroid String?
-  unitIdIos String?
-  updatedAt DateTime @updatedAt
+  unitIdIos     String?
+  updatedAt     DateTime @updatedAt
 }
