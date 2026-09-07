@@ -1,0 +1,3 @@
+import 'package:flutter/material.dart';import 'package:google_mobile_ads/google_mobile_ads.dart';
+class AdBanner extends StatefulWidget{const AdBanner({super.key});State<AdBanner> createState()=>_S();}
+class _S extends State<AdBanner>{BannerAd? ad;void initState(){super.initState();ad=BannerAd(adUnitId:'ca-app-pub-3940256099942544/9214589741',size:AdSize.banner,request:const AdRequest(),listener:BannerAdListener(onAdFailedToLoad:(a,_){a.dispose();}))..load();}Widget build(BuildContext c)=>ad==null?const SizedBox.shrink():SizedBox(width:ad!.size.width.toDouble(),height:ad!.size.height.toDouble(),child:AdWidget(ad:ad!));void dispose(){ad?.dispose();super.dispose();}}
