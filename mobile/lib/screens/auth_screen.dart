@@ -2,22 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api.dart';
 
-class AuthScreen extends StatefulWidget { const AuthScreen({super.key}); @override State<AuthScreen> createState()=>_AuthScreenState(); }
-class _AuthScreenState extends State<AuthScreen> {
-  final name=TextEditingController(), phone=TextEditingController(), password=TextEditingController(); bool register=false, busy=false;
-  Future<void> submit() async {
-    setState(()=>busy=true);
-    try {
-      final data=await Api.post(register?'/auth/register':'/auth/login', register?{'name':name.text.trim(),'phone':phone.text.trim(),'password':password.text}:{'phone':phone.text.trim(),'password':password.text});
-      final p=await SharedPreferences.getInstance(); await p.setString('token',data['token']); await p.setString('name',data['user']['name']);
-      if(mounted) Navigator.pop(context,true);
-    } catch(e) { if(mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(e.toString().replaceFirst('Exception: ','')))); }
-    finally { if(mounted)setState(()=>busy=false); }
-  }
-  @override Widget build(BuildContext c)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(appBar:AppBar(title:Text(register?'إنشاء حساب':'تسجيل الدخول')),body:ListView(padding:const EdgeInsets.all(20),children:[
-    if(register) TextField(controller:name,decoration:const InputDecoration(labelText:'الاسم',border:OutlineInputBorder())), if(register) const SizedBox(height:12),
-    TextField(controller:phone,keyboardType:TextInputType.phone,decoration:const InputDecoration(labelText:'رقم الهاتف',border:OutlineInputBorder())), const SizedBox(height:12),
-    TextField(controller:password,obscureText:true,decoration:const InputDecoration(labelText:'كلمة المرور',border:OutlineInputBorder())), const SizedBox(height:20),
-    FilledButton(onPressed:busy?null:submit,child:Text(busy?'جاري...':register?'إنشاء الحساب':'دخول')), TextButton(onPressed:busy?null:()=>setState(()=>register=!register),child:Text(register?'عندي حساب بالفعل':'إنشاء حساب جديد'))
-  ]));
+class AuthScreen extends StatefulWidget { final VoidCallback? onDone; const AuthScreen({super.key,this.onDone}); @override State<AuthScreen> createState()=>_AuthScreenState(); }
+class _AuthScreenState extends State<AuthScreen>{ final name=TextEditingController(), phone=TextEditingController(), password=TextEditingController(); bool register=false,busy=false;
+Future<void> submit() async { if(phone.text.trim().isEmpty||password.text.isEmpty||(!register&&name.text.trim().isEmpty)){show('املأ البيانات المطلوبة');return;} setState(()=>busy=true); try{final data=await Api.post(register?'/auth/register':'/auth/login',register?{'name':name.text.trim(),'phone':phone.text.trim(),'password':password.text}:{'phone':phone.text.trim(),'password':password.text}); final p=await SharedPreferences.getInstance(); await p.setString('token',data['token']); await p.setString('name',data['user']['name']); if(widget.onDone!=null)widget.onDone!();else if(mounted)Navigator.pop(context,true);}catch(e){show(e.toString().replaceFirst('Exception: ',''));}finally{if(mounted)setState(()=>busy=false);}}
+void show(String s)=>ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(s)));
+@override Widget build(BuildContext c)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(appBar:AppBar(title:Text(register?'إنشاء حساب':'تسجيل الدخول')),body:ListView(padding:const EdgeInsets.all(20),children:[if(register)TextField(controller:name,decoration:const InputDecoration(labelText:'الاسم',border:OutlineInputBorder())),if(register)const SizedBox(height:12),TextField(controller:phone,keyboardType:TextInputType.phone,decoration:const InputDecoration(labelText:'رقم الهاتف',border:OutlineInputBorder())),const SizedBox(height:12),TextField(controller:password,obscureText:true,decoration:const InputDecoration(labelText:'كلمة المرور',border:OutlineInputBorder())),const SizedBox(height:20),FilledButton(onPressed:busy?null:submit,child:Text(busy?'جاري...':register?'إنشاء الحساب':'دخول')),TextButton(onPressed:busy?null:()=>setState(()=>register=!register),child:Text(register?'عندي حساب بالفعل':'إنشاء حساب جديد'))])));
 }
